@@ -162,7 +162,7 @@ def QuadraticFitSearch(xf,f,a,b,c,n):
 
 if __name__ == '__main__':
 
-    n= 8
+    n= 5
 
     leftLim = -1
     rightLim = 5
