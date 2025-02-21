@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from scipy import optimize
 
 def direction(grad):
     grad_norm = np.linalg.norm(grad)
@@ -19,8 +20,14 @@ def rosenbrock(x1, x2):
     b = 5
     return np.power((a-x1),2) + b*np.power((x2-np.power(x1,2)),2)
 
+def rosenbrock_alpha(alpha):
+    a = 1
+    b = 5
+    return np.power((a-x1),2) + b*np.power((x2-np.power(x1,2)),2)
+
 def line_search(startpoint,direction):
-    alpha = np.arange(-2,2,0.01)
+    optimize.fminbound(rosenbrock, -2, 2)
+
     ylinevals = rosenbrock(startpoint[0]+alpha*direction[0],startpoint[1]+alpha*direction[1])
     a, _ , idxa, _= GoldenSectionSearch(alpha,ylinevals,50)
     #print(a)
