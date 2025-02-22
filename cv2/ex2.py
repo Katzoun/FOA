@@ -144,6 +144,10 @@ if __name__ == '__main__':
 
     # Plot the surface.
     fig = plt.figure(figsize=(18,8))
+    #figure title
+
+    fig.suptitle('Gradient Descent and Conjugate Gradient Descent on Rosenbrock Function')
+    
     ax = fig.add_subplot(1, 2, 1,projection='3d')
 
     #startpoint 3D
@@ -156,7 +160,8 @@ if __name__ == '__main__':
     ax.scatter(points_gd_dec[1:,0], points_gd_dec[1:,1], rosenbrock(points_gd_dec[1:,0], points_gd_dec[1:,1]), c='y', marker='o')
     #conjugate descent
     ax.scatter(points_cg[1:,0], points_cg[1:,1], rosenbrock(points_cg[1:,0], points_cg[1:,1]), c='orange', marker='o')
-
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
     ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
     
     ax = fig.add_subplot(1, 2,2)
@@ -182,5 +187,9 @@ if __name__ == '__main__':
     #cil
     ax.scatter(1, 1 ,c='g', marker='o')
 
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    #save fig
+    plt.savefig('rosenbrock.png')
 
     plt.show()
