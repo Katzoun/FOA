@@ -191,6 +191,8 @@ if __name__ == '__main__':
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
     
+    #legend 
+    ax.legend(['startpoint','Gradient descent with optimal step','Gradient descent with decaying step','Conjugate gradient with optimal step'])
     #plt.savefig('rosenbrock.png')
 
     plt.show()
