@@ -20,97 +20,83 @@ def rosenbrock(x1, x2):
     b = 5
     return np.power((a-x1),2) + b*np.power((x2-np.power(x1,2)),2)
 
-def rosenbrock_alpha(alpha):
+def rosenbrock_alpha(alpha,startpoint,direction):
     a = 1
     b = 5
+    x1 = startpoint[0]+alpha*direction[0]
+    x2 = startpoint[1]+alpha*direction[1]
+
     return np.power((a-x1),2) + b*np.power((x2-np.power(x1,2)),2)
 
 def line_search(startpoint,direction):
-    optimize.fminbound(rosenbrock, -2, 2)
-
-    ylinevals = rosenbrock(startpoint[0]+alpha*direction[0],startpoint[1]+alpha*direction[1])
-    a, _ , idxa, _= GoldenSectionSearch(alpha,ylinevals,50)
-    #print(a)
-    newpoint = startpoint + a*direction
-    #print(newpoint)
-    
-    # fig1 = plt.figure()
-    # plt.plot(alpha,ylinevals)
-    # plt.show()
-
+    alpha = optimize.fminbound(rosenbrock_alpha, -2, 2, args=(startpoint,direction))
+    #print(alpha)
+   
+    newpoint = startpoint + alpha*direction
     return newpoint
 
-def GoldenSectionSearch(xf,f,n): #removed a,b params
+def line_search_conjugate(startpoint,direction,k):
+    alpha = np.power(0.9,k)
+    #print(alpha)
+   
+    newpoint = startpoint + alpha*direction
+    return newpoint
+
+def gradient_descent(startpoint, grad_size_lim, max_iter, search_method):
+    x = startpoint.astype(float)
     
-    idxa = 0
-    #idxa = np.argmin(np.abs(xf - a))
-    idxb = len(f)-1
-    #idxb = np.argmin(np.abs(xf - b))
-    ya = f[idxa]
-    yb = f[idxb]
-    a = xf[idxa]
-    b = xf[idxb]
+    points = np.empty((0, 2))
+    directions = np.empty((0, 2))
+    points = np.append(points, [startpoint], axis=0)
 
-    phi = (1+np.sqrt(5))/2
-    rho = phi -1 
-    d = rho*b+(1-rho)*a
-    # zjisteni, kteremu indexu odpovida d
-    idxd = np.argmin(np.abs(xf - d))
-    yd = f[idxd]
-    d = xf[idxd]
+    for i in range(max_iter):
+        grad = rosenbrock_grad(x[0], x[1])
+        if np.linalg.norm(grad) < grad_size_lim:
+            if search_method == "optimal":
+                print(f"Gradient descent with optimal step converged (grad < {grad_size_lim}) at iteration {i}")
+            elif search_method == "decaying":
+                print(f"Gradient descent with decaying step converged (grad < {grad_size_lim}) at iteration {i}")
+            break
+        
+        elif i == max_iter-1:
+            if search_method == "optimal":
+                print(f"Gradient descent with optimal step did not converge after {max_iter} iterations")
+            elif search_method == "decaying":
+                print(f"Gradient descent with decaying step did not converge after {max_iter} iterations")
 
-    #print("\nGolden Section Search Algorithm")
-    #print(f"Iterace {0:2d}:  a={xf[idxa]:1.2f}  b={xf[idxb]:1.2f}  d={xf[idxd]:1.2f}")
-    
-    for i in range(1,n):
-        c = rho*xf[idxa]+(1-rho)*xf[idxb]
-        idxc = np.argmin(np.abs(xf - c))
-        c = xf[idxc]
-        yc = f[idxc]
+        dir = direction(grad)
 
-        #print(f"Iterace {i:2d}:  a={xf[idxa]:1.2f}  b={xf[idxb]:1.2f}  c={xf[idxc]:1.2f}  d={xf[idxd]:1.2f}")
-
-        if yc < yd:
-            idxb = idxd
-            idxd = idxc
-            b = xf[idxb]
-            a = xf[idxa]
-            d = xf[idxd]
-            yd = yc
+        if search_method == "optimal":
+            x[0],x[1] = line_search([x[0],x[1]], dir)
+        elif search_method == "decaying":
+            x[0], x[1] = line_search_conjugate([x[0],x[1]], dir,i)
         else:
-            idxa = idxb
-            idxb = idxc
-            b = xf[idxb]
-            a = xf[idxa]
-            d = xf[idxd]
-    
-    if a < b:
-        return (a,b, idxa, idxb)
-    else:
-        return (b,a, idxb, idxa)
+            print("Invalid search method")
+            raise ValueError
+        
+        points = np.append(points, [x], axis=0)
+        directions = np.append(directions, [dir], axis=0)
 
+    return points, directions
 
-def gradient_descent(startpoint, grad_size_lim, max_iter):
+def gradient_descent_conjugate(startpoint, grad_size_lim, max_iter):
     x = startpoint.astype(float)
     points = np.empty((0, 2))
-    #  o = direction(rosenbrock_grad(-1,-1))
-    # i = np.linalg.norm(o)
-    # new_point = line_search(startpoint,o)
-    
-    # points = np.append(points, [new_point], axis=0)
-    
-    # o = direction(rosenbrock_grad(new_point[0],new_point[1]))
-    # new_point = line_search(new_point,o)
-    # points = np.append(points, [new_point], axis=0)
-    # print(points)
+    directions = np.empty((0, 2))
+    points = np.append(points, [startpoint], axis=0)
+
     for i in range(max_iter):
         grad = rosenbrock_grad(x[0], x[1])
         if np.linalg.norm(grad) < grad_size_lim:
             break
-        x[0], x[1] = line_search([x[0],x[1]], direction(grad))
+        dir = direction(grad)
+        x[0], x[1] = line_search([x[0],x[1]], dir)
         points = np.append(points, [x], axis=0)
-        #print(x)
-    return points
+        directions = np.append(directions, [dir], axis=0)
+
+    return points, directions
+
+
 
 
 if __name__ == '__main__':
@@ -130,57 +116,50 @@ if __name__ == '__main__':
     X1c, X2c = np.meshgrid(X1range, X2range)
     Zc = rosenbrock(X1c,X2c)
 
-    #print(points.shape)
-    #print(points)
-    #debug
-    # print(Zc.shape)
-    # print(rosenbrock(1,1,1,5))
-    # print(rosenbrock(-1,-1,1,5))
-    # print("grads")
-    # print(rosenbrock_grad(-1,-1,1,5))
-    # print(rosenbrock_grad(1,1,1,5))
-    #print("direction")
-    #print(rosenbrock_grad(-1,-1))
+    print(f"\n\nGlobal minimum at (1,1) with value {rosenbrock(1,1)}")
+    print(f"Starting point: {startpoint}")
+    print(f"Gradient size limit: {grad_size_lim}")
+    print(f"Max iterations: {max_iter}")
+    print("\nGradient descent methods: ")
+    points_gd_opt, directions_gd_opt = gradient_descent(startpoint, grad_size_lim, max_iter, "optimal")
+    points_gd_dec, directions_gd_dec = gradient_descent(startpoint, grad_size_lim, max_iter, "decaying")
 
-    """ points = np.empty((0, 2))
-    o = direction(rosenbrock_grad(-1,-1))
-    new_point = line_search(startpoint,o)
+    print("\nConjugate gradient method with Polak-Ribiere equation and optimal stepsize: ")
 
-    points = np.append(points, [new_point], axis=0)
-    
-    o = direction(rosenbrock_grad(new_point[0],new_point[1]))
-    new_point = line_search(new_point,o)
-    points = np.append(points, [new_point], axis=0)
-    print(points) """
-
-    #print(points)
-    
-    
-    #fig1 = plt.figure()
-    # plt.plot(alpha,vect)
-    # plt.show()
-    #print(o)
-    #print(i)
-    print("cc")
-    points = gradient_descent(startpoint, grad_size_lim, max_iter)
-    #print(gradient_descent(startpoint, grad_size_lim, max_iter, 1, 5))
 
     # Plot the surface.
     fig = plt.figure(figsize=(18,8))
     ax = fig.add_subplot(1, 2, 1,projection='3d')
-    #ax = fig.add_subplot(111, projection='3d')
+
+    #startpoint 3D
     ax.scatter(startpoint[0], startpoint[1], rosenbrock(startpoint[0], startpoint[1]), c='r', marker='o')
+    #endpoint 3D
     ax.scatter(1, 1, rosenbrock(1, 1), c='g', marker='o')
-    ax.scatter(points[1:,0], points[1:,1], rosenbrock(points[1:,0], points[1:,1]), c='b', marker='o')
+    #gradient descent optimal
+    ax.scatter(points_gd_opt[1:,0], points_gd_opt[1:,1], rosenbrock(points_gd_opt[1:,0], points_gd_opt[1:,1]), c='b', marker='o')
+    #gradient descent decaying
+    ax.scatter(points_gd_dec[1:,0], points_gd_dec[1:,1], rosenbrock(points_gd_dec[1:,0], points_gd_dec[1:,1]), c='y', marker='o')
+
     ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
     
     ax = fig.add_subplot(1, 2,2)
     ax.contour(X1c, X2c, Zc, 200)
     ax.scatter(startpoint[0], startpoint[1], c='r', marker='o')
-    ax.scatter(points[0:,0], points[0:,1], c='b', marker='o')
+
+
+    #gradient descent optimal
+    ax.scatter(points_gd_opt[1:,0], points_gd_opt[1:,1], c='b', marker='o')
+    #gradient descent decaying
+    ax.scatter(points_gd_dec[1:,0], points_gd_dec[1:,1], c='y', marker='o')
+
+
     #plot lines between points
-    for i in range(1,len(points)):
-        ax.plot([points[i-1][0],points[i][0]],[points[i-1][1],points[i][1]],c='b')
+    for i in range(1,len(points_gd_opt)):
+        ax.plot([points_gd_opt[i-1][0],points_gd_opt[i][0]],[points_gd_opt[i-1][1],points_gd_opt[i][1]],c='b')
+    for i in range(1,len(points_gd_dec)):
+        ax.plot([points_gd_dec[i-1][0],points_gd_dec[i][0]],[points_gd_dec[i-1][1],points_gd_dec[i][1]],c='y')
     #cil
     ax.scatter(1, 1 ,c='g', marker='o')
+
+
     plt.show()
