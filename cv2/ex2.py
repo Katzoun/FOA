@@ -193,6 +193,6 @@ if __name__ == '__main__':
     
     #legend 
     ax.legend(['startpoint','Gradient descent with optimal step','Gradient descent with decaying step','Conjugate gradient with optimal step'])
-    plt.savefig('rosenbrock.png')
+    #plt.savefig('rosenbrock.png')
 
     plt.show()
