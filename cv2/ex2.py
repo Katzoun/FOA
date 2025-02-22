@@ -162,6 +162,7 @@ if __name__ == '__main__':
     ax.scatter(points_cg[1:,0], points_cg[1:,1], rosenbrock(points_cg[1:,0], points_cg[1:,1]), c='orange', marker='o')
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
+
     ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
     
     ax = fig.add_subplot(1, 2,2)
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
-    #save fig
-    plt.savefig('rosenbrock.png')
+    
+    #plt.savefig('rosenbrock.png')
 
     plt.show()
