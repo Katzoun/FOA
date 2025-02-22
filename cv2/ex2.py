@@ -53,16 +53,16 @@ def gradient_descent(startpoint, grad_size_lim, max_iter, search_method):
         grad = rosenbrock_grad(x[0], x[1])
         if np.linalg.norm(grad) < grad_size_lim:
             if search_method == "optimal":
-                print(f"Gradient descent with optimal step converged (grad < {grad_size_lim}) at iteration {i}")
+                print(f"Gradient descent with optimal step converged (grad < {grad_size_lim}) at iteration {i}, distance to global minimum: {np.linalg.norm(x-[1,1])}")
             elif search_method == "decaying":
-                print(f"Gradient descent with decaying step converged (grad < {grad_size_lim}) at iteration {i}")
+                print(f"Gradient descent with decaying step converged (grad < {grad_size_lim}) at iteration {i}, distance to global minimum: {np.linalg.norm(x-[1,1])}")
             break
         
         elif i == max_iter-1:
             if search_method == "optimal":
-                print(f"Gradient descent with optimal step did not converge after {max_iter} iterations")
+                print(f"Gradient descent with optimal step did not converge after {max_iter} iterations, distance to global minimum: {np.linalg.norm(x-[1,1])}")
             elif search_method == "decaying":
-                print(f"Gradient descent with decaying step did not converge after {max_iter} iterations")
+                print(f"Gradient descent with decaying step did not converge after {max_iter} iterations, distance to global minimum: {np.linalg.norm(x-[1,1])}")
 
         dir = direction(grad)
 
@@ -84,15 +84,30 @@ def gradient_descent_conjugate(startpoint, grad_size_lim, max_iter):
     points = np.empty((0, 2))
     directions = np.empty((0, 2))
     points = np.append(points, [startpoint], axis=0)
+    prev_grad = np.zeros(2) #previous gradient
 
     for i in range(max_iter):
         grad = rosenbrock_grad(x[0], x[1])
+
         if np.linalg.norm(grad) < grad_size_lim:
+            print(f"Conjugate gradient descent with optimal step converged (grad < {grad_size_lim}) at iteration {i}, distance to global minimum: {np.linalg.norm(x-[1,1])}")
             break
-        dir = direction(grad)
+        elif i == max_iter-1:
+            print(f"Conjugate gradient descent with optimal step did not converge after {max_iter} iterations, distance to global minimum: {np.linalg.norm(x-[1,1])}")
+
+        if(i == 0):
+            dir = direction(grad)
+        else:
+            #Polak Ribiere equation for beta
+            beta = np.dot(grad,grad-prev_grad)/np.dot(prev_grad,prev_grad)
+            beta = max(0,beta)
+
+            dir = direction(grad) + beta*directions[i-1]
+
         x[0], x[1] = line_search([x[0],x[1]], dir)
         points = np.append(points, [x], axis=0)
         directions = np.append(directions, [dir], axis=0)
+        prev_grad = grad
 
     return points, directions
 
@@ -125,7 +140,7 @@ if __name__ == '__main__':
     points_gd_dec, directions_gd_dec = gradient_descent(startpoint, grad_size_lim, max_iter, "decaying")
 
     print("\nConjugate gradient method with Polak-Ribiere equation and optimal stepsize: ")
-
+    points_cg, directions_cg = gradient_descent_conjugate(startpoint, grad_size_lim, max_iter)
 
     # Plot the surface.
     fig = plt.figure(figsize=(18,8))
@@ -139,6 +154,8 @@ if __name__ == '__main__':
     ax.scatter(points_gd_opt[1:,0], points_gd_opt[1:,1], rosenbrock(points_gd_opt[1:,0], points_gd_opt[1:,1]), c='b', marker='o')
     #gradient descent decaying
     ax.scatter(points_gd_dec[1:,0], points_gd_dec[1:,1], rosenbrock(points_gd_dec[1:,0], points_gd_dec[1:,1]), c='y', marker='o')
+    #conjugate descent
+    ax.scatter(points_cg[1:,0], points_cg[1:,1], rosenbrock(points_cg[1:,0], points_cg[1:,1]), c='orange', marker='o')
 
     ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
     
@@ -151,13 +168,17 @@ if __name__ == '__main__':
     ax.scatter(points_gd_opt[1:,0], points_gd_opt[1:,1], c='b', marker='o')
     #gradient descent decaying
     ax.scatter(points_gd_dec[1:,0], points_gd_dec[1:,1], c='y', marker='o')
-
+    #conjugate gradient
+    ax.scatter(points_cg[1:,0], points_cg[1:,1], c='orange', marker='o')
 
     #plot lines between points
     for i in range(1,len(points_gd_opt)):
         ax.plot([points_gd_opt[i-1][0],points_gd_opt[i][0]],[points_gd_opt[i-1][1],points_gd_opt[i][1]],c='b')
     for i in range(1,len(points_gd_dec)):
         ax.plot([points_gd_dec[i-1][0],points_gd_dec[i][0]],[points_gd_dec[i-1][1],points_gd_dec[i][1]],c='y')
+    for i in range(1,len(points_cg)):
+        ax.plot([points_cg[i-1][0],points_cg[i][0]],[points_cg[i-1][1],points_cg[i][1]],c='orange')
+
     #cil
     ax.scatter(1, 1 ,c='g', marker='o')
 
