@@ -1,19 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from scipy import optimize
-
-def direction(grad):
-    grad_norm = np.linalg.norm(grad)
-    return -grad/grad_norm
-
-def rosenbrock_grad(x1, x2):
-    a = 1
-    b = 5
-    grad = np.zeros(2)
-    grad[0] = 2*(x1-a) - 4*b*x1*(x2-np.power(x1,2))
-    grad[1] = 2*b*(x2-np.power(x1,2))
-    return grad
 
 def rosenbrock(x1, x2):
     a = 1
@@ -36,8 +23,6 @@ def cyclic_coordinate_search_accelerated(startpoint, step_size_lim, max_iter, ma
     f_calls = 0
 
     points = np.array([startpoint], dtype=np.float64)
-
-    #todo implementace limitu na minimalni velikost delta
 
     while np.fabs(delta) > step_size_lim and it_num < max_iter and f_calls < max_fcalls:
         x1 = x
@@ -71,7 +56,7 @@ def hookes_jeeves(startpoint, start_step_size, step_size_lim, step_decay, max_it
         improved = False
         xbest, ybest = x, y
 
-        for i in range(1,n):
+        for i in range(0,n):
             for sgn in (-1,1):
                 xnew = x + sgn*start_step_size*np.eye(n)[i]
                 ynew = rosenbrock(xnew[0], xnew[1])
@@ -94,10 +79,18 @@ def hookes_jeeves(startpoint, start_step_size, step_size_lim, step_decay, max_it
 
 def line_search(startpoint,direction, max_fcalls):
     alpha, _ , _, calls = optimize.fminbound(rosenbrock_alpha, -2, 2, args=(startpoint,direction), full_output=True, maxfun=max_fcalls, disp=0)
-    #print(alpha)
-    
+
     newpoint = startpoint + alpha*direction
     return newpoint, calls
+
+def nelder_mead(startpoint, max_iter, max_fcalls):
+    x = startpoint.astype(float)
+    n = np.size(x)
+    it_num = 0
+    f_calls = 0
+    points = np.array([startpoint], dtype=np.float64)
+
+    return points , f_calls, it_num
 
 
 
@@ -127,24 +120,27 @@ if __name__ == '__main__':
     print(f"\n\nGlobal minimum at (1,1) with value {rosenbrock(1,1)}")
     print(f"Starting point: {startpoint}")
     print(f"Max iterations: {max_iter}")
-    print(f"Max function calls: {max_iter}")
+    print(f"Max function calls: {max_fcalls}")
+
+    #Volani jednotlivych metod
 
     print("\nCyclic coordinate search with acceleration step and optimal stepsize: ")
     points_ccs, f_calls_ccs, it_num_ccs = cyclic_coordinate_search_accelerated(startpoint, step_size_lim_ccs, max_iter, max_fcalls)
     print(f"Converged after {it_num_ccs} iterations and {f_calls_ccs} function calls, distance to global minimum: {np.linalg.norm(points_ccs[-1]-[1,1])}")
 
-    print("\nHooke Jeeves method: ")
+    print("\nHooke-Jeeves method: ")
     points_hj, f_calls_hj, it_num_hj  = hookes_jeeves(startpoint, start_step_size_hj, step_size_lim_hj,step_decay_hj, max_iter, max_fcalls)
     print(f"Converged after {it_num_hj} iterations and {f_calls_hj} function calls, distance to global minimum: {np.linalg.norm(points_hj[-1]-[1,1])}")
 
-    # print("\nConjugate gradient method with Polak-Ribiere equation and optimal stepsize: ")
-    # points_cg, directions_cg = gradient_descent_conjugate(startpoint, grad_size_lim, max_iter)
+    print("\nNelder-Mead method: ")
+    points_nm,f_calls_nm, it_num_nm =  nelder_mead(startpoint, max_iter, max_fcalls)
+    print(f"Converged after {it_num_nm} iterations and {f_calls_nm} function calls, distance to global minimum: {np.linalg.norm(points_nm[-1]-[1,1])}")
 
     # Plot the surface.
     fig = plt.figure(figsize=(18,8))
     #figure title
 
-    fig.suptitle('Methods')
+    fig.suptitle('Exercise 3 - Cyclic coordinate search, Hooke-Jeeves, Nelder-Mead and Quasi-newton methods')
     
     ax = fig.add_subplot(1, 2, 1,projection='3d')
     
@@ -153,19 +149,18 @@ if __name__ == '__main__':
     ax.scatter(startpoint[0], startpoint[1], rosenbrock(startpoint[0], startpoint[1]), c='r', marker='o')
     #endpoint 3D
     ax.scatter(1, 1, rosenbrock(1, 1), c='g', marker='o')
-    
-    
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
+
     #3D plot cesty
     ax.scatter(points_ccs[1:,0], points_ccs[1:,1], rosenbrock(points_ccs[1:,0], points_ccs[1:,1]), c='b', marker='o')
     ax.scatter(points_hj[1:,0], points_hj[1:,1], rosenbrock(points_hj[1:,0], points_hj[1:,1]), c='y', marker='o')
-    #conjugate descent
     #ax.scatter(points_cg[1:,0], points_cg[1:,1], rosenbrock(points_cg[1:,0], points_cg[1:,1]), c='orange', marker='o')
-    ax.set_xlabel('x1')
-    ax.set_ylabel('x2')
-
-
-    ax.contour3D(X1c, X2c, Zc,200, cmap='viridis')
-
+    
+    
+    
+    #2D plot
     ax = fig.add_subplot(1, 2,2)
     ax.set_aspect('equal', 'box')
     ax.contour(X1c, X2c, Zc, 200)
@@ -180,8 +175,8 @@ if __name__ == '__main__':
     #2D plot lines between points
     for i in range(1,len(points_ccs)):
         ax.plot([points_ccs[i-1][0],points_ccs[i][0]],[points_ccs[i-1][1],points_ccs[i][1]],c='b')
-    # for i in range(1,len(points_gd_dec)):
-    #     ax.plot([points_gd_dec[i-1][0],points_gd_dec[i][0]],[points_gd_dec[i-1][1],points_gd_dec[i][1]],c='y')
+    for i in range(1,len(points_hj)):
+        ax.plot([points_hj[i-1][0],points_hj[i][0]],[points_hj[i-1][1],points_hj[i][1]],c='y')
     # for i in range(1,len(points_cg)):
     #     ax.plot([points_cg[i-1][0],points_cg[i][0]],[points_cg[i-1][1],points_cg[i][1]],c='orange')
 
@@ -192,7 +187,7 @@ if __name__ == '__main__':
     ax.set_ylabel('x2')
     
     #legend 
-    ax.legend(['startpoint','Cyclic Coordinate Search with acceleration step', 'Global minimum'])
+    ax.legend(['startpoint','Cyclic Coordinate Search with acceleration step', 'Hookes Jeeves method', 'Global minimum'])
     #plt.savefig('rosenbrock.png')
 
     plt.show()
