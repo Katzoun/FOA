@@ -163,10 +163,6 @@ def quasi_newton_dfp(startpoint ,max_iter, max_fcalls, grad_lim_size):
     grad_prev = grad
     f_calls += 1
     grad_size = np.linalg.norm(grad)
-    x, f_calls_new = line_search(x, -np.matmul(Qm,grad), max_fcalls-f_calls)
-    f_calls += f_calls_new
-
-    points = np.append(points, [x], axis=0)
 
     while it_num < max_iter and f_calls < max_fcalls and grad_size > grad_lim_size:
             
@@ -306,6 +302,6 @@ if __name__ == '__main__':
     
     #legend 
     ax.legend(['startpoint','Cyclic Coordinate Search with acceleration step', 'Hookes Jeeves method', 'Nelder-Mead method', 'Quasi-Newton DFP method'])
-    #plt.savefig('rosenbrock.png')
+    #plt.savefig('./cv3/rosenbrock.png')
 
     plt.show()
