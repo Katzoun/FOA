@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import optimize
+from scipy import stats
 
 
 
@@ -19,8 +19,7 @@ def ackley(x):
 
 def rand_positive_spanning_set(alpha, n):
     delta = round(1/np.sqrt(alpha))
-    #diagonal matrix
-    Lmatrix = np.diag(delta*np.random.choice([1,-1],n))
+    Lmatrix = np.diag(delta*np.random.choice([1.0,-1.0],n))
     for i in range(1,n):
         for j in range(i):
             Lmatrix[i][j] = np.random.randint(-delta+1,delta)
@@ -67,12 +66,82 @@ def mesh_adaptive_direct_search(f, x, step_size_lim_mad, max_iter, max_fcalls):
     
     return points, fcalls, it_num
 
+def cross_entropy_method(f, x, m, melite, max_iter, max_fcalls):
+    n = len(x)
+    fcalls = 0
+    it_num = 0
+    
+    mu = np.array(x).reshape(-1)
+    mu_points = np.array(x)
+    #mu_points = np.empty((n,0))
+    sigma = np.eye(n) * 10.0
+    PropDist = stats.multivariate_normal(mu, sigma)
+    elite_points = np.empty((n, 0))
+
+    while fcalls < max_fcalls and it_num < max_iter:
+        samples = PropDist.rvs(m)
+        values = np.array([f(sample) for sample in samples])
+        fcalls += m
+
+        elite_indices = values.argsort()[:melite]
+        elite = samples[elite_indices]
+
+        mu = (1/melite)*sum(elite)
+
+        sigma = np.zeros((n, n))
+        for sample in elite:
+            diff = sample - mu
+            outer = np.outer(diff, diff)
+            sigma += outer
+        
+        sigma = sigma / melite
+
+        #alternative way to calculate sigma
+        #sigma = (1/melite)*sum(np.outer(sample - mu, sample - mu) for sample in elite)
+        
+        PropDist = stats.multivariate_normal(mu, sigma)
+
+        it_num += 1
+        elite_points = np.append(elite_points, elite.T, axis=1)
+        mu_points = np.append(mu_points, mu.reshape(-1, 1), axis=1)
+    
+    return elite_points,mu_points, fcalls, it_num
+
+def differential_evolution(f, x, pop_size, p, w, max_iter, max_fcalls):
+    n = len(x)
+    fcalls = 0
+    it_num = 0
+    points = np.zeros((n, 0))
+    pop = np.random.uniform(x - 4, x + 4, (n, pop_size))
+    points = np.append(points, pop, axis=1)
+
+    while fcalls < max_fcalls and it_num < max_iter:
+        
+        for k in range(pop_size):
+            
+            idxs = np.random.choice(pop_size_de, 3, replace=False) #replace zakaze opakovani indexu
+            a, b, c = pop[:, idxs[0]], pop[:, idxs[1]], pop[:, idxs[2]] #vyber 3 nahodne jedince
+            
+            z = a + w * (b - c) #w je diferencni vaha a p je pravdepodobnost krizeni
+            j = np.random.randint(n) #volba nahodne dimenze
+            
+            x_new = np.array([z[i] if i == j or np.random.rand() < p else pop[i, k] for i in range(n)])
+            
+            if f(x_new) < f(pop[:, k]):
+                pop[:, k] = x_new
+            fcalls += 2
+        it_num += 1
+
+        points = np.append(points, pop, axis=1)
+
+    return points, fcalls, it_num
+
  
 
 
 if __name__ == '__main__':
 
-    #np.random.seed(158)
+    # np.random.seed(1138) #seed pro debugovani 
 
     #Mesh adaptive direct search specific params
     step_size_lim_mads = 1e-6
@@ -95,7 +164,7 @@ if __name__ == '__main__':
 
     max_iter = 100
     max_fcalls = 1000
-    startpoint = np.array([[-6],[-4.5]])
+    startpoint = np.array([[-6.0],[-4.5]])
 
     x1leftLim = -8
     x1rightLim = 8
@@ -118,75 +187,92 @@ if __name__ == '__main__':
     points_mads, f_calls_mads, it_num_mads = mesh_adaptive_direct_search(ackley, startpoint, step_size_lim_mads, max_iter, max_fcalls)
     print(f"Converged after {it_num_mads} iterations and {f_calls_mads} function calls, distance to global minimum: {np.linalg.norm(points_mads[:,-1]-[0,0])}")
 
-    # print("\nHooke-Jeeves method: ")
-    # points_hj, f_calls_hj, it_num_hj  = hookes_jeeves(startpoint, start_step_size_hj, step_size_lim_hj,step_decay_hj, max_iter, max_fcalls)
-    # print(f"Converged after {it_num_hj} iterations and {f_calls_hj} function calls, distance to global minimum: {np.linalg.norm(points_hj[-1]-[1,1])}")
+    print("\nCross entropy method: ")
+    points_cem_elite, points_cem, f_calls_cem, it_num_cem  = cross_entropy_method(ackley, startpoint, m, melite, max_iter, max_fcalls)
+    print(f"Converged after {it_num_cem} iterations and {f_calls_cem} function calls, distance to global minimum: {np.linalg.norm(points_cem[:,-1]-[0,0])}")
 
-    # print("\nNelder-Mead method: ")
-    # points_nm,f_calls_nm, it_num_nm =  nelder_mead(starting_simplex, step_size_lim_nm, alpha, beta, gamma ,max_iter, max_fcalls)
-    # print(f"Converged after {it_num_nm} iterations and {f_calls_nm} function calls, distance to global minimum: {np.linalg.norm(points_nm[-1][0]-[1,1])}")
+    print("\nDifferential evolution: ")
+    points_de,f_calls_de, it_num_de =  differential_evolution(ackley, startpoint, pop_size_de, p_de, w_de ,max_iter, max_fcalls)
+    # Calculate mean from last population
+    mean_last_pop = np.mean(points_de[:, -pop_size_de:], axis=1)
+    print(f"Converged after {it_num_de} iterations and {f_calls_de} function calls, distance to global minimum: {np.linalg.norm(mean_last_pop-[0,0])}")
 
     # print("\nQuasi-Newton DFP method: ")
     # points_dfp, f_calls_dfp, it_num_dfp = quasi_newton_dfp(startpoint, max_iter, max_fcalls, grad_lim_size)
     # print(f"Converged after {it_num_dfp} iterations and {f_calls_dfp} function calls, distance to global minimum: {np.linalg.norm(points_dfp[-1]-[1,1])}")
 
     # Plot the surface.
-    fig = plt.figure(figsize=(18,8))
-    #figure title
 
+    fig, axs = plt.subplots(2, 2, figsize=(18, 8) )
+    fig.delaxes(axs[0,0])
+    fig.tight_layout()
     fig.suptitle('Exercise 4 - Stochastic and population methods')
-    
-    ax = fig.add_subplot(1, 2, 1,projection='3d')
-    
 
-    #startpoint 3D
+    # first plot -------------------------------------------------------------------
+    ax = fig.add_subplot(2, 2, 1, projection='3d',)
+    axs[0, 0] = ax
+    
     ax.scatter(startpoint[0], startpoint[1], ackley([startpoint[0], startpoint[1]]), c='r', marker='o')
     #endpoint 3D
     ax.scatter(0, 0, ackley([[0],[0]]), c='g', marker='o')
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
-    ax.contour3D(x[0], x[1], Zc,100, cmap='viridis')
+    ax.contour3D(x[0], x[1], Zc,60, cmap='viridis')
 
     #3D plot 
     ax.plot(points_mads[0], points_mads[1], ackley(points_mads), c='b', marker='o')
-    # ax.scatter(points_hj[1:,0], points_hj[1:,1], rosenbrock(points_hj[1:,0], points_hj[1:,1]), c='y', marker='o')
-    # ax.scatter(points_nm[1:,0], points_nm[1:,1], rosenbrock(points_nm[1:,0], points_nm[1:,1]), c='orange', marker='o')
-    # ax.scatter(points_dfp[1:,0], points_dfp[1:,1], rosenbrock(points_dfp[1:,0], points_dfp[1:,1]), c='purple', marker='o')
+    ax.plot(points_cem[0], points_cem[1], ackley(points_cem), c='y', marker='o')
     
-    #print(points_nm)
-    #print(points_nm.shape)
-    #print(points_nm[-1][0])
-
-    #2D plot
-    ax = fig.add_subplot(1, 2,2)
-    ax.set_aspect('equal', 'box')
-    ax.contour(x[0], x[1], Zc, 100)
+    #plot moving batches of proposal distrubution
+    # for i in range(0,points_cem_elite.shape[1],10):
+    #     ax.scatter(points_cem_elite[0,i:i+10], points_cem_elite[1,i:i+10], ackley(points_cem_elite[:,i:i+10]), c='r', marker='o')
+    
+    #second plot (2D) -------------------------------------------------------------------
+    ax = axs[0, 1]
+    ax.set_aspect('equal')
+    ax.contour(x[0], x[1], Zc, 20)
     ax.scatter(startpoint[0], startpoint[1], c='r', marker='o')
 
     # #2D plot
     ax.plot(points_mads[0], points_mads[1], c='b', marker='o')
-    # ax.scatter(points_hj[1:,0], points_hj[1:,1], c='y', marker='o')
-
-    # ax.scatter(points_nm[0:,0:,0], points_nm[0:,0:,1], c='orange', marker='o')
-    # ax.scatter(points_dfp[1:,0], points_dfp[1:,1], c='purple', marker='o')
-
-    #2D plot lines between points
-    # for i in range(1,len(points_ccs)):
-    #     ax.plot([points_ccs[i-1][0],points_ccs[i][0]],[points_ccs[i-1][1],points_ccs[i][1]],c='b')
-    # for i in range(1,len(points_hj)):
-    #     ax.plot([points_hj[i-1][0],points_hj[i][0]],[points_hj[i-1][1],points_hj[i][1]],c='y')
-    # for i in range(0,len(points_nm)):
-    #       for j in range(1,3):
-    #         ax.plot([points_nm[i][j-1][0],points_nm[i][j][0]],[points_nm[i][j-1][1],points_nm[i][j][1]],c='orange')
-    # for i in range(1,len(points_dfp)):
-    #     ax.plot([points_dfp[i-1][0],points_dfp[i][0]],[points_dfp[i-1][1],points_dfp[i][1]],c='purple')       
-    #cil
+    ax.plot(points_cem[0], points_cem[1], c='y', marker='o')
+    
+    #print batches of 10 elite points from cross entropy method
+    # for i in range(0,points_cem_elite.shape[1],10):
+    #     ax.scatter(points_cem_elite[0,i:i+10], points_cem_elite[1,i:i+10], c='r', marker='o')
     ax.scatter(0, 0 ,c='g', marker='o')
-
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
-    
     #legend 
-    ax.legend(['startpoint','Cyclic Coordinate Search with acceleration step', 'Hookes Jeeves method', 'Nelder-Mead method', 'Quasi-Newton DFP method'])
-    #plt.savefig('./cv3/rosenbrock.png')
+    ax.legend(['startpoint','Mesh adaptive direct search', 'Cross entropy method', 'Global minimum'])
+
+    
+    # Third subplot -------------------------------------------------------------------
+    ax = axs[1, 0]
+    ax.set_aspect('equal')
+    ax.contour(x[0], x[1], Zc, 20)
+    ax.scatter(startpoint[0], startpoint[1], c='r', marker='o')
+    ax.scatter(0, 0, c='g', marker='o')
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.set_xlim(-8,8)
+    ax.set_ylim(-8,8)
+
+    for i in range(0,points_de.shape[1],pop_size_de):
+        ax.scatter(points_de[0,i:i+pop_size_de], points_de[1,i:i+pop_size_de], c="b", marker='.')
+        x_temp = points_de[0,i:i+pop_size_de]
+    
+
+    ax.legend(['startpoint', 'Global minimum', 'Differential evolution'])
+
+    # Fourth subplot -------------------------------------------------------------------
+    ax = axs[1, 1]
+    ax.set_aspect('equal')
+    ax.contour(x[0], x[1], Zc, 20)
+    ax.scatter(startpoint[0], startpoint[1], c='r', marker='o')
+    ax.scatter(0, 0, c='g', marker='o')
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.legend(['startpoint', 'Placeholder method'])
+
     plt.show()
