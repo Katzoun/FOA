@@ -112,7 +112,7 @@ def differential_evolution(f, x, pop_size, p, w, max_iter, max_fcalls):
     fcalls = 0
     it_num = 0
     points = np.zeros((n, 0))
-    pop = np.random.uniform(x - 4, x + 4, (n, pop_size))
+    pop = np.random.uniform(x - 2, x + 2, (n, pop_size))
     points = np.append(points, pop, axis=1)
 
     while fcalls < max_fcalls and it_num < max_iter:
@@ -136,12 +136,59 @@ def differential_evolution(f, x, pop_size, p, w, max_iter, max_fcalls):
 
     return points, fcalls, it_num
 
- 
+def particke_swarm_optimization(f, x, pop_size, w, c1, c2, max_iter, max_fcalls):
+    n = len(x)
+    fcalls = 0
+    it_num = 0
+    points = np.zeros((n, 0))
+    popul = np.random.uniform(x - 2, x + 2, (n, pop_size))
+    points = np.append(points, popul, axis=1)
+    
+    x_best = np.copy(popul)
+    y_best = [float('inf')] * pop_size
+    global_best_x = None
+    global_best_y = float('inf')
+
+    popul_v = np.zeros((n, pop_size))
+
+    for i in range(pop_size):
+        y = f(popul[:, i])
+        fcalls += 1
+        if y < y_best[i]:
+            x_best[:,i] = popul[:, i]
+            y_best[i] = y
+
+        if y < global_best_y:
+            global_best_x = popul[:, i]
+            global_best_y = y
+
+    while fcalls < max_fcalls and it_num < max_iter:
+        for i in range(pop_size):
+            r1 = np.random.rand()
+            r2 = np.random.rand()
+            popul_v[:, i] = w * popul_v[:, i] + c1 * r1 * (x_best[:, i] - popul[:,i]) + c2 * r2 * (global_best_x - popul[:,i])
+            popul[:, i] += popul_v[:, i]
+
+            y = f(popul[:, i])
+            fcalls += 1
+
+            if y < y_best[i]:
+                x_best[:,i] = np.copy(popul[:, i])
+                y_best[i] = np.copy(y)
+            if y < global_best_y:
+                global_best_x = np.copy(popul[:, i])
+                global_best_y = np.copy(y)
+
+        it_num += 1
+        points = np.append(points, x_best, axis=1)
+
+    return points, fcalls, it_num
+
 
 
 if __name__ == '__main__':
 
-    # np.random.seed(1138) #seed pro debugovani 
+    #np.random.seed(1138) #seed pro debugovani 
 
     #Mesh adaptive direct search specific params
     step_size_lim_mads = 1e-6
@@ -156,11 +203,10 @@ if __name__ == '__main__':
     w_de = 0.8
 
     #Particle swarm optimization specific params
-    grad_lim_size = 0.01
     pop_size_pso = 10
     w_pso = 0.9
-    c1 = 1.2
-    c2 = 1.2
+    c1_pso = 1.2
+    c2_pso = 1.2
 
     max_iter = 100
     max_fcalls = 1000
@@ -194,12 +240,14 @@ if __name__ == '__main__':
     print("\nDifferential evolution: ")
     points_de,f_calls_de, it_num_de =  differential_evolution(ackley, startpoint, pop_size_de, p_de, w_de ,max_iter, max_fcalls)
     # Calculate mean from last population
-    mean_last_pop = np.mean(points_de[:, -pop_size_de:], axis=1)
-    print(f"Converged after {it_num_de} iterations and {f_calls_de} function calls, distance to global minimum: {np.linalg.norm(mean_last_pop-[0,0])}")
+    mean_last_pop_de = np.mean(points_de[:, -pop_size_de:], axis=1)
+    print(f"Converged after {it_num_de} iterations and {f_calls_de} function calls, distance to global minimum: {np.linalg.norm(mean_last_pop_de-[0,0])}")
 
-    # print("\nQuasi-Newton DFP method: ")
-    # points_dfp, f_calls_dfp, it_num_dfp = quasi_newton_dfp(startpoint, max_iter, max_fcalls, grad_lim_size)
-    # print(f"Converged after {it_num_dfp} iterations and {f_calls_dfp} function calls, distance to global minimum: {np.linalg.norm(points_dfp[-1]-[1,1])}")
+    print("\nParticle swarm optimization: ")
+    points_pso, f_calls_pso, it_num_pso = particke_swarm_optimization(ackley, startpoint, pop_size_pso, w_pso, c1_pso, c2_pso, max_iter, max_fcalls)
+    # Calculate mean from last population
+    mean_last_pop_pso = np.mean(points_pso[:, -pop_size_pso:], axis=1)
+    print(f"Converged after {it_num_pso} iterations and {f_calls_pso} function calls, distance to global minimum: {np.linalg.norm(mean_last_pop_pso-[0,0])}")
 
     # Plot the surface.
 
@@ -260,7 +308,6 @@ if __name__ == '__main__':
 
     for i in range(0,points_de.shape[1],pop_size_de):
         ax.scatter(points_de[0,i:i+pop_size_de], points_de[1,i:i+pop_size_de], c="b", marker='.')
-        x_temp = points_de[0,i:i+pop_size_de]
     
 
     ax.legend(['startpoint', 'Global minimum', 'Differential evolution'])
@@ -273,6 +320,12 @@ if __name__ == '__main__':
     ax.scatter(0, 0, c='g', marker='o')
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
-    ax.legend(['startpoint', 'Placeholder method'])
+    ax.set_xlim(-8,8)
+    ax.set_ylim(-8,8)
+
+    for i in range(0,points_pso.shape[1],pop_size_pso):
+        ax.scatter(points_pso[0,i:i+pop_size_pso], points_pso[1,i:i+pop_size_pso], c="b", marker='.')
+
+    ax.legend(['startpoint', 'Global minimum', 'Particle swarm optimization'])
 
     plt.show()
