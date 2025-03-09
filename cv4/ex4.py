@@ -130,9 +130,11 @@ def differential_evolution(f, x, pop_size, p, w, max_iter, max_fcalls):
             if f(x_new) < f(pop[:, k]):
                 pop[:, k] = x_new
             fcalls += 2
-        it_num += 1
 
+        it_num += 1
         points = np.append(points, pop, axis=1)
+
+    # pop_min = np.argmin([f(pop[:, i]) for i in range(pop_size)]) #debug
 
     return points, fcalls, it_num
 
