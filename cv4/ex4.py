@@ -329,5 +329,6 @@ if __name__ == '__main__':
         ax.scatter(points_pso[0,i:i+pop_size_pso], points_pso[1,i:i+pop_size_pso], c="b", marker='.')
 
     ax.legend(['startpoint', 'Global minimum', 'Particle swarm optimization'])
-
+    
+    #plt.savefig('./cv4/ackley.png')
     plt.show()

@@ -5,6 +5,8 @@ This repository provides summary of the projects I have worked on during the cou
 * cv1 - Bracketing methods (Fibonacci search, golden section search, quadratic fit search)
 * cv2 - First-order methods (Gradient descent, Conjugate gradient descent)
 * cv3 - Second-order and zero-order methods (CCS, Hooke-Jeeves, Nelder-Mead, Quasi-Newton methods)
+* cv4 - Stochastic and Population methods (Differential Evolution, Particle swarm, Cross entropy, MADS)
+
 
 🔴Brno University of Technology  
 🔴Faculty of Mechanical Engineering  
