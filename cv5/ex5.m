@@ -63,57 +63,57 @@ func_grad = @(x) flower_grad(x);
 
 %% The BFGS Quasi-Newton method with the quadratic penalty, rho = [0.01, 0.5, 1, 4, 8, 16]
 
-% x0 = [-2;-2];
-% rho = [0.01, 0.5, 1, 4, 8, 16];
-
-% for k=1:length(rho)
-    
-%     figure()
-%     f_penalized_quad = @(x) func(x) + rho(k)*pquad(x);
-%     f_penalized_quad_grad = @(x) func_grad(x) + rho(k)*pquad_grad(x);
-    
-%     plot_function(f_penalized_quad, [-4, 4], [0, 0]);
-%     plot(sqrt(2)*sin(t),sqrt(2)*cos(t),'b-');
-
-%     %%newtons method
-%     [newtons_points, newtons_iter, newtons_fcalls] = newtons_method_BFGS(f_penalized_quad, f_penalized_quad_grad, x0, 1e-3, 1e2, 1e3);
-%     str = strcat('Newtons method BFGS, f calls = ',num2str(newtons_fcalls),', best f = ', ...
-%             num2str(func(newtons_points(:,end))),', iters = ', num2str(newtons_iter), ', rho = ', num2str(rho(k)));
-%     plt3 = plot(newtons_points(1,:),newtons_points(2,:),'r','Linewidth',1,'DisplayName',str);
-
-%     l = legend(plt3);
-%     l.FontSize = 10;
-
-% end
-
-%% The BFGS Quasi-Newton method with the Augmented Lagrange Method (inequality constraint is changed into equality)
- 
 x0 = [-2;-2];
 rho = [0.01, 0.5, 1, 4, 8, 16];
-lambda = 0;
 
 for k=1:length(rho)
     
-    clf;
-
-    f_penalized_lag= @(x) func(x) + p_lagrange(x, rho(k), lambda);
-    f_penalized_lag_grad = @(x) func_grad(x) + p_lagrange_grad(x, rho(k), lambda);
-
-    plot_function(f_penalized_lag, [-4, 4], [0, 0]);
+    figure()
+    f_penalized_quad = @(x) func(x) + rho(k)*pquad(x);
+    f_penalized_quad_grad = @(x) func_grad(x) + rho(k)*pquad_grad(x);
+    
+    plot_function(f_penalized_quad, [-4, 4], [0, 0]);
     plot(sqrt(2)*sin(t),sqrt(2)*cos(t),'b-');
 
     %%newtons method
-    [newtons_points, newtons_iter, newtons_fcalls] = newtons_method_BFGS(f_penalized_lag, f_penalized_lag_grad, x0, 1e-3, 100, 1e4);
-    str = strcat('Newtons method BFGS with Augmented Lagrange, f calls = ',num2str(newtons_fcalls),', best f = ', ...
+    [newtons_points, newtons_iter, newtons_fcalls] = newtons_method_BFGS(f_penalized_quad, f_penalized_quad_grad, x0, 1e-3, 1e2, 1e3);
+    str = strcat('Newtons method BFGS, f calls = ',num2str(newtons_fcalls),', best f = ', ...
             num2str(func(newtons_points(:,end))),', iters = ', num2str(newtons_iter), ', rho = ', num2str(rho(k)));
-    plt3 = plot(newtons_points(1,:),newtons_points(2,:),'r*','Linewidth',1,'DisplayName',str);
+    plt3 = plot(newtons_points(1,:),newtons_points(2,:),'r','Linewidth',1,'DisplayName',str);
+
     l = legend(plt3);
     l.FontSize = 10;
 
-    x0 = newtons_points(:,end);
-    lambda = lambda - rho(k)*constraint(x0);
-    pause(1);
 end
+
+%% The BFGS Quasi-Newton method with the Augmented Lagrange Method (inequality constraint is changed into equality)
+ 
+% x0 = [-2;-2];
+% rho = [0.01, 0.5, 1, 4, 8, 16];
+% lambda = 0;
+
+% for k=1:length(rho)
+    
+%     clf;
+
+%     f_penalized_lag= @(x) func(x) + p_lagrange(x, rho(k), lambda);
+%     f_penalized_lag_grad = @(x) func_grad(x) + p_lagrange_grad(x, rho(k), lambda);
+
+%     plot_function(f_penalized_lag, [-4, 4], [0, 0]);
+%     plot(sqrt(2)*sin(t),sqrt(2)*cos(t),'b-');
+
+%     %%newtons method
+%     [newtons_points, newtons_iter, newtons_fcalls] = newtons_method_BFGS(f_penalized_lag, f_penalized_lag_grad, x0, 1e-3, 100, 1e4);
+%     str = strcat('Newtons method BFGS with Augmented Lagrange, f calls = ',num2str(newtons_fcalls),', best f = ', ...
+%             num2str(func(newtons_points(:,end))),', iters = ', num2str(newtons_iter), ', rho = ', num2str(rho(k)));
+%     plt3 = plot(newtons_points(1,:),newtons_points(2,:),'r*','Linewidth',1,'DisplayName',str);
+%     l = legend(plt3);
+%     l.FontSize = 10;
+
+%     x0 = newtons_points(:,end);
+%     lambda = lambda - rho(k)*constraint(x0);
+%     pause(1);
+% end
 
 
 
