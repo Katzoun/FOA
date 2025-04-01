@@ -21,8 +21,9 @@ clear;clc;close all;
 % eps1 =  1e-6;
 % eps2 = 1e-6;
 
-% r_dual = @(x,lambda) obj_grad(x) + A'*lambda;
 % r_primal = @(x) A*x-b;
+% r_dual = @(x,lambda) obj_grad(x) + A'*lambda;
+
 % r = @(x,lambda) [r_dual(x,lambda); r_primal(x)];
 % iter = 1;
 % lambda = zeros(m,1);
