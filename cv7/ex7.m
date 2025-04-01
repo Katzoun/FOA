@@ -65,123 +65,123 @@ clear;clc;close all;
 
 %% Linear programming in inequality form - barrier
 
-% rng(1,'twister');
-% n = 20; m = 3*n;
-% c = randn(n,1);
-% A = rand(m,n); x0 = ones(n,1);
-% b = A*x0 + 5 + 10*rand(m,1);
-% A_ineq = [A;-eye(n)]; 
-% b_ineq = [b;zeros(n,1)];
-
-% Phi = @(x) -sum(log(b_ineq-A_ineq*x));
-% r = @(x) 1./(b_ineq-A_ineq*x);
-% Phi_grad = @(x) A_ineq'*r(x);
-% Phi_hess = @(x) A_ineq'*(diag(r(x))^2)*A_ineq;
-
-% xs = [x0]; t = 0.1; beta = 20; 
-% vareps = 1e-4;
-% iter = 1;
-
-% obj_f_nobarrier = @(x) c'*x;
-% obj_f = @(x,t) c'*x*t + Phi(x);
-% obj_grad = @(x,t) c*t + Phi_grad(x);
-% obj_hess = @(x) Phi_hess(x);
-
-
-% tic
-% while m/t > vareps
-%     t = t*beta;
-%     grad = obj_grad(xs(:,end),t);
-%     hess = obj_hess(xs(:,end));
-    
-%     while true
-        
-%         dir = -hess\grad; % Newton step
-%         if (dir'*hess*dir)^0.5 <vareps %newton decrement
-%             break
-%         end
-
-%         % line search
-%         f = @(alpha) obj_f(xs(:,end)+alpha*dir,t);
-%         [a_br,c_br] = bracket_minimum(f);
-%         [a_br,c_br] = golden_section_search(f,a_br,c_br,30);
-%         alpha = (a_br+c_br)/2;
-%         %ulozeni novych hodnot
-%         xs(:,end+1) = xs(:,end) + alpha*dir;
-    
-%         grad = obj_grad(xs(:,end),t);
-%         hess = obj_hess(xs(:,end));
-%     end
-%     iter = iter + 1;
-% end
-% toc
-% disp(xs(:,end));
-% disp(obj_f_nobarrier(xs(:,end)));
-
-% % pro n > 62 to zacne casova narocnost prudce narustat (n=62, t = 1.1s)
-
-% [x_lin,fval] = linprog(c,A_ineq,b_ineq) % pro kontrolu
-
-
-%% Quadratic programming in inequality form, SVM
 rng(1,'twister');
-n = 20;
-x_p = 0.4*randn(n,2) + 1;
-x_m = 0.7*randn(n,2) - 1;
-C = 1e-1; 
-
-P = zeros(3+2*n,3+2*n); P(1,1) = 1; P(2,2) = 1; 
-f = [zeros(3,1);
-C*ones(2*n,1)];
-b = -ones(2*n,1); A = [-x_p, -ones(n,1); x_m, ones(n,1)]; A = [A,-eye(2*n)];
-A_ineq = [A; zeros(2*n,3), -eye(2*n)]; b_ineq = [b;zeros(2*n,1)];
+n = 20; m = 3*n;
+c = randn(n,1);
+A = rand(m,n); x0 = ones(n,1);
+b = A*x0 + 5 + 10*rand(m,1);
+A_ineq = [A;-eye(n)]; 
+b_ineq = [b;zeros(n,1)];
 
 Phi = @(x) -sum(log(b_ineq-A_ineq*x));
 r = @(x) 1./(b_ineq-A_ineq*x);
 Phi_grad = @(x) A_ineq'*r(x);
 Phi_hess = @(x) A_ineq'*(diag(r(x))^2)*A_ineq;
 
-m = 4*n;
-xs = [zeros(3,1);10*ones(2*n,1)]; 
-t = 0.1; beta = 20; 
+xs = [x0]; t = 0.1; beta = 20; 
+vareps = 1e-4;
 iter = 1;
-vareps = 1e-3;
 
-obj_f_nobarrier = @(x) (0.5*x'*P*x + f'*x);
-obj_f = @(x,t) (0.5*x'*P*x + f'*x)*t + Phi(x);
-obj_grad = @(x,t) (P*x + f)*t + Phi_grad(x);
-obj_hess = @(x,t) (P)*t + Phi_hess(x);
+obj_f_nobarrier = @(x) c'*x;
+obj_f = @(x,t) c'*x*t + Phi(x);
+obj_grad = @(x,t) c*t + Phi_grad(x);
+obj_hess = @(x) Phi_hess(x);
+
 
 tic
 while m/t > vareps
-        t = t*beta;
-        grad = obj_grad(xs(:,end),t);
-        hess = obj_hess(xs(:,end),t);
-
-        while true
-            dir = -hess\grad; % Newton step
-            if (dir'*hess*dir)^0.5 <vareps %newton decrement
-                break
-            end
+    t = t*beta;
+    grad = obj_grad(xs(:,end),t);
+    hess = obj_hess(xs(:,end));
     
-            % line search
-            f_s = @(alpha) obj_f(xs(:,end)+alpha*dir,t);
-            [a_br,c_br] = bracket_minimum(f_s);
-            [a_br,c_br] = golden_section_search(f_s,a_br,c_br,30);
-            alpha = (a_br+c_br)/2;
-            %ulozeni novych hodnot
-            xs(:,end+1) = xs(:,end) + alpha*dir;
-    
-            grad = obj_grad(xs(:,end),t);
-            hess = obj_hess(xs(:,end),t);
+    while true
+        
+        dir = -hess\grad; % Newton step
+        if (dir'*hess*dir)^0.5 <vareps %newton decrement
+            break
         end
-        iter = iter + 1;
-end
-toc 
 
+        % line search
+        f = @(alpha) obj_f(xs(:,end)+alpha*dir,t);
+        [a_br,c_br] = bracket_minimum(f);
+        [a_br,c_br] = golden_section_search(f,a_br,c_br,15);
+        alpha = (a_br+c_br)/2;
+        %ulozeni novych hodnot
+        xs(:,end+1) = xs(:,end) + alpha*dir;
+    
+        grad = obj_grad(xs(:,end),t);
+        hess = obj_hess(xs(:,end));
+    end
+    iter = iter + 1;
+end
+toc
 disp(xs(:,end));
 disp(obj_f_nobarrier(xs(:,end)));
 
-%t = 1.04s pro n = 170
+% pro n > 62 to zacne casova narocnost prudce narustat (n=62, t = 1.1s)
 
-[x_opt, fval] = quadprog(P,f,A_ineq,b_ineq)  % pro kontrolu
+[x_lin,fval] = linprog(c,A_ineq,b_ineq) % pro kontrolu
+
+
+%% Quadratic programming in inequality form, SVM
+% rng(1,'twister');
+% n = 20;
+% x_p = 0.4*randn(n,2) + 1;
+% x_m = 0.7*randn(n,2) - 1;
+% C = 1e-1; 
+
+% P = zeros(3+2*n,3+2*n); P(1,1) = 1; P(2,2) = 1; 
+% f = [zeros(3,1);
+% C*ones(2*n,1)];
+% b = -ones(2*n,1); A = [-x_p, -ones(n,1); x_m, ones(n,1)]; A = [A,-eye(2*n)];
+% A_ineq = [A; zeros(2*n,3), -eye(2*n)]; b_ineq = [b;zeros(2*n,1)];
+
+% Phi = @(x) -sum(log(b_ineq-A_ineq*x));
+% r = @(x) 1./(b_ineq-A_ineq*x);
+% Phi_grad = @(x) A_ineq'*r(x);
+% Phi_hess = @(x) A_ineq'*(diag(r(x))^2)*A_ineq;
+
+% m = 4*n;
+% xs = [zeros(3,1);10*ones(2*n,1)]; 
+% t = 0.1; beta = 20; 
+% iter = 1;
+% vareps = 1e-3;
+
+% obj_f_nobarrier = @(x) (0.5*x'*P*x + f'*x);
+% obj_f = @(x,t) (0.5*x'*P*x + f'*x)*t + Phi(x);
+% obj_grad = @(x,t) (P*x + f)*t + Phi_grad(x);
+% obj_hess = @(x,t) (P)*t + Phi_hess(x);
+
+% tic
+% while m/t > vareps
+%         t = t*beta;
+%         grad = obj_grad(xs(:,end),t);
+%         hess = obj_hess(xs(:,end),t);
+
+%         while true
+%             dir = -hess\grad; % Newton step
+%             if (dir'*hess*dir)^0.5 <vareps %newton decrement
+%                 break
+%             end
+    
+%             % line search
+%             f_s = @(alpha) obj_f(xs(:,end)+alpha*dir,t);
+%             [a_br,c_br] = bracket_minimum(f_s);
+%             [a_br,c_br] = golden_section_search(f_s,a_br,c_br,30);
+%             alpha = (a_br+c_br)/2;
+%             %ulozeni novych hodnot
+%             xs(:,end+1) = xs(:,end) + alpha*dir;
+    
+%             grad = obj_grad(xs(:,end),t);
+%             hess = obj_hess(xs(:,end),t);
+%         end
+%         iter = iter + 1;
+% end
+% toc 
+
+% disp(xs(:,end));
+% disp(obj_f_nobarrier(xs(:,end)));
+
+% %t = 1.04s pro n = 170
+
+% [x_opt, fval] = quadprog(P,f,A_ineq,b_ineq)  % pro kontrolu
