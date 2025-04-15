@@ -1,6 +1,6 @@
 clear;clc;close all;
 
-% Problem 1 - Simulator
+% % Problem 1 - Simulator
 % load('prob1.mat');
 % rng(1,'twister');
 % x0 = [5;5;5;5;5];
@@ -101,8 +101,8 @@ clear;clc;close all;
 
 
 
-% fvalbest = (x_best-x_0)'*(x_best-x_0);
-% disp('fvalbest');
+% fvalbest = (x_best-x_0)'*(x_best-x_0)
+
 % % norm(x_best-x_0)^2;
 
 % sum(iters_in);
@@ -110,6 +110,7 @@ clear;clc;close all;
 
 %% Problem 3 - Pwo phase simplex method
 % vars: x1, x2+, x2-, x3, x4+, x4-, z1, z2    
+% problem preveden na standardni tvar
 c = [7 4 -4 -3 1 -1 0 0 ]';
 
 A = [3 2 -2 0 1 -1 0 0; -1 0 0 3 0 0 1 0; -2 -4 4 1 0 0 0 1];
