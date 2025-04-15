@@ -140,10 +140,10 @@ zs(end)
 N_ids = setdiff(1:n,B_ids)
 [x,B_ids,N_ids,zs,flag] = simplex_method(c,A,b,B_ids,N_ids)
 
-disp('Kontrola pomoci linprog')
-tic
-[x_lin,fval] = linprog(c,[],[],A,b,zeros(n,1)); fval     % pro kontrolu
-toc
+% disp('Kontrola pomoci linprog')
+% tic
+% [x_lin,fval] = linprog(c,[],[],A,b,zeros(n,1)); fval     % pro kontrolu
+% toc
 
 
 
